@@ -1,41 +1,25 @@
-// GET /api/censistas?dni=...&nombre=...
+// server.js
+const express = require("express");
+const cors = require("cors");
+
+const app = express();
+const PORT = process.env.PORT || 10000; // Render te da un puerto en process.env.PORT
+
+app.use(cors());
+app.use(express.json());
+
+// tu ruta:
 app.get("/api/censistas", async (req, res) => {
   try {
-    await ensureCache();
-
-    const dni = (req.query.dni || "").toString().trim();
-    const nombre = (req.query.nombre || "").toString().trim().toLowerCase();
-
-    let resultados = cachedUsuarios;
-
-    if (dni) {
-      resultados = resultados.filter((u) =>
-        (u.dni || "").toString().includes(dni)
-      );
-    }
-
-    if (nombre) {
-      const tokens = nombre
-        .toLowerCase()
-        .split(/\s+/)
-        .filter(Boolean);
-
-      resultados = resultados.filter((u) => {
-        const full = (u.nomb_ape || "").toLowerCase();
-        return tokens.every((token) => full.includes(token));
-      });
-    }
-
-    res.json({
-      ok: true,
-      count: resultados.length,
-      data: resultados,
-    });
+    // acá haces el fetch al JSON del INEI, etc
+    res.json({ ok: true, msg: "Funciona 😎" });
   } catch (err) {
-    console.error("Error en /api/censistas:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Error en el servidor intermedio",
-    });
+    console.error(err);
+    res.status(500).json({ ok: false, msg: "Error en el servidor" });
   }
+});
+
+// importante: arrancar el server
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
