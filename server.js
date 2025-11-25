@@ -1,63 +1,46 @@
 // server.js
-
-// 1. Imports
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
-// 2. Crear app
 const app = express();
-
-// 3. Middlewares
 app.use(cors());
 
-// 4. Constante con la URL del INEI
-const INEI_URL = "https://apiasistentevirtual.inei.gob.pe/api/general/fullDB";
-
-// 5. Ruta raíz (solo para probar que el back vive)
+// Ruta raíz para probar
 app.get("/", (req, res) => {
-  res.json({ ok: true, msg: "Backend INEI funcionando 😎" });
+  res.json({ ok: true, msg: "Backend INEI local funcionando 😎" });
 });
 
-// 6. Ruta principal que usa tu front
-app.get("/api/censistas", async (req, res) => {
+// Ruta /api/censistas leyendo fullDB.json local
+app.get("/api/censistas", (req, res) => {
   try {
-    console.log("Llamando a INEI_URL:", INEI_URL);
+    const filePath = path.join(__dirname, "data", "fullDB.json");
 
-    const resp = await fetch(INEI_URL); // Node 18+ ya trae fetch global
+    const raw = fs.readFileSync(filePath, "utf8");
+    const json = JSON.parse(raw);
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("Error al llamar a INEI:", resp.status, text.slice(0, 300));
-      return res.status(500).json({
-        ok: false,
-        msg: "Error al llamar a la API INEI",
-        status: resp.status,
-        bodyPreview: text.slice(0, 300),
-      });
-    }
-
-    const json = await resp.json();
-
+    // La API original tiene: data.usuarios
     const usuarios = json?.data?.usuarios ?? [];
 
     res.json({
       ok: true,
-      msg: "Listado de censistas",
+      msg: "Listado de censistas desde archivo local",
       data: {
         usuarios,
       },
     });
   } catch (error) {
-    console.error("Error al obtener censistas:", error);
+    console.error(error);
     res.status(500).json({
       ok: false,
-      msg: "Error al obtener los datos de censistas",
+      msg: "Error al leer el archivo local",
       error: String(error),
     });
   }
 });
 
-// 7. Levantar servidor
+// Puerto para Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor escuchando en el puerto", PORT);
