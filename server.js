@@ -3,23 +3,36 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 10000; // Render te da un puerto en process.env.PORT
+app.use(cors()); // 👈 habilita CORS para cualquier origen
 
-app.use(cors());
-app.use(express.json());
+const INEI_URL = "https://apiasistentevirtual.inei.gob.pe/api/general/fullDB";
 
-// tu ruta:
 app.get("/api/censistas", async (req, res) => {
   try {
-    // acá haces el fetch al JSON del INEI, etc
-    res.json({ ok: true, msg: "Funciona 😎" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, msg: "Error en el servidor" });
+    const resp = await fetch(INEI_URL); // Node 18+ ya tiene fetch
+    const json = await resp.json();
+
+    // La API del INEI trae algo así:
+    // { ok, msg, data: { usuarios: [...] } }
+    const usuarios = json?.data?.usuarios ?? [];
+
+    res.json({
+      ok: true,
+      msg: "Listado de censistas",
+      data: {
+        usuarios,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener censistas:", error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error al obtener los datos de censistas",
+    });
   }
 });
 
-// importante: arrancar el server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en el puerto ${PORT}`);
+  console.log("Servidor escuchando en el puerto", PORT);
 });
