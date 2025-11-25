@@ -1,31 +1,26 @@
-// server.js
-const express = require("express");
-const cors = require("cors");
-
-const app = express();
-
-// 👇 Permitir peticiones desde tu front (localhost, Netlify, etc.)
-app.use(cors());
-
-// URL oficial del INEI
-const INEI_URL = "https://apiasistentevirtual.inei.gob.pe/api/general/fullDB";
-
-// Ruta de prueba opcional
-app.get("/", (req, res) => {
-  res.json({ ok: true, msg: "Backend INEI funcionando 😎" });
-});
-
-// Ruta que usa tu front: /api/censistas
 app.get("/api/censistas", async (req, res) => {
   try {
-    // Llamamos a la API del INEI
-    const resp = await fetch(INEI_URL); // Node 18+ ya trae fetch nativo
+    console.log("Llamando a INEI_URL:", INEI_URL);
+
+    const resp = await fetch(INEI_URL);
+
+    // Si la API del INEI responde con error (404, 500, etc.)
+    if (!resp.ok) {
+      const text = await resp.text(); // leemos como texto para ver qué responde
+      console.error("Error al llamar a INEI:", resp.status, text.slice(0, 300));
+      return res.status(500).json({
+        ok: false,
+        msg: "Error al llamar a la API INEI",
+        status: resp.status,
+        bodyPreview: text.slice(0, 300) // primeros 300 chars para debug
+      });
+    }
+
+    // Si responde OK, intentamos parsear como JSON
     const json = await resp.json();
 
-    // La API viene algo así: { ok, msg, data: { usuarios: [...] } }
     const usuarios = json?.data?.usuarios ?? [];
 
-    // Respondemos en el formato que tu front espera
     res.json({
       ok: true,
       msg: "Listado de censistas",
@@ -38,12 +33,7 @@ app.get("/api/censistas", async (req, res) => {
     res.status(500).json({
       ok: false,
       msg: "Error al obtener los datos de censistas",
+      error: String(error),        // <--- MANDAMOS EL ERROR
     });
   }
-});
-
-// Puerto para Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Servidor escuchando en el puerto", PORT);
 });
