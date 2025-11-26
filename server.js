@@ -25,11 +25,10 @@ app.get("/api/censistas", (req, res) => {
 
     res.json({
       ok: true,
-      msg: "Listado de censistas desde archivo local",
-      data: {
-        usuarios,
-      },
+      count: usuarios.length,
+      data: usuarios,
     });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({
